@@ -10,7 +10,7 @@ JWTs are used for authentication objects.
 
 In order for the server to work correctly it must be configured by providing a `config.js` file.
 
-```js
+```ts
 export default {
   jwtSecret: 'your-cryptographically-generated-secret-here',
   db: {
@@ -27,7 +27,7 @@ export default {
     url: 'https://pizza-factory.cs329.click',
     apiKey: 'your-factory-issued-api-key-here',
   },
-};
+} as const;
 ```
 
 ## Endpoints
