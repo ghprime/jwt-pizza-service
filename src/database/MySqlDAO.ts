@@ -5,15 +5,28 @@ import {
   ResultSetHeader,
 } from "mysql2/promise";
 import { compare, hash } from "bcrypt";
-import { Franchise, Item, Order, Role, Store, UserData } from "../model";
+import { Franchise, Item, Order, Role, Store, UserData, UserOrders } from "../model";
 import { StatusCodeError } from "../endpointHelper";
 import { tableCreateStatements } from "./dbModel";
 import config from "../config";
+import { DatabaseDAO } from "./DatabaseDAO";
 
-class DBDao {
+export class MySqlDAO implements DatabaseDAO {
   private initialized: Promise<void>;
 
-  constructor() {
+  private static _instance: MySqlDAO;
+
+  static async getInstance(): Promise<DatabaseDAO> {
+    if (this._instance) return this._instance;
+
+    const temp = new MySqlDAO();
+    
+    await temp.initialized;
+
+    return this._instance = temp;
+  }
+
+  private constructor() {
     this.initialized = this.initializeDatabase();
   }
 
@@ -27,7 +40,7 @@ class DBDao {
     }
   }
 
-  async addMenuItem(item: Item) {
+  async addMenuItem(item: Item): Promise<Item> {
     const connection = await this.getConnection();
     try {
       const addResult = await this.query<ResultSetHeader>(
@@ -172,10 +185,10 @@ class DBDao {
     }
   }
 
-  async getOrders(user: UserData, page = 1) {
+  async getOrders(user: UserData, page = 1): Promise<UserOrders> {
     const connection = await this.getConnection();
     try {
-      const offset = this.getOffset(page, config.db.listPerPage);
+      const offset = this.getOffset(config.db.listPerPage, page);
       const orders = await this.query<Order[]>(
         connection,
         `SELECT id, franchiseId, storeId, date FROM dinerOrder WHERE dinerId=? LIMIT ${offset},${config.db.listPerPage}`,
@@ -189,7 +202,7 @@ class DBDao {
         );
         order.items = items;
       }
-      return { dinerId: user.id, orders: orders, page };
+      return { dinerId: user.id, orders, page };
     } finally {
       connection.end();
     }
@@ -380,11 +393,11 @@ class DBDao {
     }
   }
 
-  getOffset(currentPage = 1, listPerPage: number): number {
+  private getOffset(listPerPage: number, currentPage = 1): number {
     return (currentPage - 1) * listPerPage;
   }
 
-  getTokenSignature(token: string): string {
+  private getTokenSignature(token: string): string {
     const parts = token.split(".");
     if (parts.length > 2) {
       return parts[2];
@@ -392,7 +405,7 @@ class DBDao {
     return "";
   }
 
-  async query<T = QueryResult>(
+  private async query<T = QueryResult>(
     connection: Connection,
     sql: string,
     params?: any[],
@@ -403,7 +416,7 @@ class DBDao {
     return results as T;
   }
 
-  async getID(
+  private async getID(
     connection: Connection,
     key: string | number,
     value: any,
@@ -420,13 +433,13 @@ class DBDao {
     throw new Error("No ID found");
   }
 
-  async getConnection(): Promise<Connection> {
+  private async getConnection(): Promise<Connection> {
     // Make sure the database is initialized before trying to get a connection.
     await this.initialized;
     return this._getConnection();
   }
 
-  async _getConnection(setUse = true): Promise<Connection> {
+  private async _getConnection(setUse = true): Promise<Connection> {
     const connection = await createConnection({
       host: config.db.connection.host,
       user: config.db.connection.user,
@@ -440,7 +453,7 @@ class DBDao {
     return connection;
   }
 
-  async initializeDatabase(): Promise<void> {
+  private async initializeDatabase(): Promise<void> {
     try {
       const connection = await this._getConnection(false);
       try {
@@ -485,7 +498,7 @@ class DBDao {
     }
   }
 
-  async checkDatabaseExists(connection: Connection) {
+  private async checkDatabaseExists(connection: Connection) {
     const rows = await this.query<[]>(
       connection,
       "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?",
@@ -494,5 +507,3 @@ class DBDao {
     return rows.length > 0;
   }
 }
-
-export const DB = new DBDao();

@@ -1,9 +1,9 @@
 import { Router, Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { asyncHandler } from "../endpointHelper";
-import { DB } from "../database";
 import config from "../config";
 import { Role, UserData } from "../model";
+import { DatabaseDAO } from "../database";
 
 export const authRouter = Router();
 
@@ -65,15 +65,16 @@ export const authRouterEndpoints = [
   },
 ];
 
-export const setAuthUser = async (
+export const setAuthUser = asyncHandler(async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   const token = readAuthToken(req);
+  const dao = res.locals.dao;
   if (token) {
     try {
-      if (await DB.isLoggedIn(token)) {
+      if (await dao.isLoggedIn(token)) {
         // Check the database to make sure the token is valid.
         // token is hashed user
         const user = jwt.verify(token, config.jwtSecret) as unknown as UserData;
@@ -88,7 +89,7 @@ export const setAuthUser = async (
     }
   }
   next();
-};
+});
 
 // Authenticate token
 export const authenticateToken = (
@@ -113,13 +114,14 @@ authRouter.post(
         .status(400)
         .json({ message: "name, email, and password are required" });
     }
-    const user = await DB.addUser({
+    const dao = res.locals.dao;
+    const user = await dao.addUser({
       name,
       email,
       password,
       roles: [{ role: Role.DINER }],
     } as UserData);
-    const auth = await setAuth(user);
+    const auth = await setAuth(user, res.locals.dao);
     res.json({ user: user, token: auth });
   }),
 );
@@ -129,8 +131,9 @@ authRouter.put(
   "/",
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    const user = await DB.getUser({ email, password } as UserData);
-    const auth = await setAuth(user);
+    const dao = res.locals.dao;
+    const user = await dao.getUser({ email, password } as UserData);
+    const auth = await setAuth(user, res.locals.dao);
     res.json({ user: user, token: auth });
   }),
 );
@@ -140,7 +143,7 @@ authRouter.delete(
   "/",
   authenticateToken,
   asyncHandler(async (req, res) => {
-    await clearAuth(req);
+    await clearAuth(req, res.locals.dao);
     res.json({ message: "logout successful" });
   }),
 );
@@ -157,7 +160,8 @@ authRouter.put(
       return res.status(403).json({ message: "unauthorized" });
     }
 
-    const updatedUser = await DB.updateUser({
+    const dao = res.locals.dao;
+    const updatedUser = await dao.updateUser({
       id,
       email,
       password,
@@ -166,16 +170,16 @@ authRouter.put(
   }),
 );
 
-async function setAuth(user: UserData) {
+async function setAuth(user: UserData, dao: DatabaseDAO) {
   const token = jwt.sign(user, config.jwtSecret);
-  await DB.loginUser(user.id, token);
+  await dao.loginUser(user.id, token);
   return token;
 }
 
-async function clearAuth(req: Request) {
+async function clearAuth(req: Request, dao: DatabaseDAO) {
   const token = readAuthToken(req);
   if (token) {
-    await DB.logoutUser(token);
+    await dao.logoutUser(token);
   }
 }
 

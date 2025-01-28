@@ -1,6 +1,5 @@
 import { Router } from "express";
 import config from "../config";
-import { DB } from "../database";
 import { authenticateToken } from "./authRouter";
 import { asyncHandler, StatusCodeError } from "../endpointHelper";
 import { Role } from "../model";
@@ -84,7 +83,8 @@ export const orderRouterEndpoints = [
 orderRouter.get(
   "/menu",
   asyncHandler(async (_req, res) => {
-    res.send(await DB.getMenu());
+    const dao = res.locals.dao;
+    res.send(await dao.getMenu());
   }),
 );
 
@@ -93,13 +93,14 @@ orderRouter.put(
   "/menu",
   authenticateToken,
   asyncHandler(async (req, res) => {
+    const dao = res.locals.dao;
     if (!res.locals.user.isRole(Role.ADMIN)) {
       throw new StatusCodeError("unable to add menu item", 403);
     }
 
     const addMenuItemReq = req.body;
-    await DB.addMenuItem(addMenuItemReq);
-    res.send(await DB.getMenu());
+    await dao.addMenuItem(addMenuItemReq);
+    res.send(await dao.getMenu());
   }),
 );
 
@@ -108,7 +109,8 @@ orderRouter.get(
   "/",
   authenticateToken,
   asyncHandler(async (req, res) => {
-    res.json(await DB.getOrders(res.locals.user, +req.query.page!));
+    const dao = res.locals.dao;
+    res.json(await dao.getOrders(res.locals.user, +req.query.page!));
   }),
 );
 
@@ -118,7 +120,8 @@ orderRouter.post(
   authenticateToken,
   asyncHandler(async (req, res) => {
     const orderReq = req.body;
-    const order = await DB.addDinerOrder(res.locals.user, orderReq);
+    const dao = res.locals.dao;
+    const order = await dao.addDinerOrder(res.locals.user, orderReq);
     const r = await fetch(`${config.factory.url}/api/order`, {
       method: "POST",
       headers: {

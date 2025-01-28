@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { DB } from "../database";
 import { authenticateToken } from "./authRouter";
 import { StatusCodeError, asyncHandler } from "../endpointHelper";
 import { Franchise, Role } from "../model";
@@ -83,7 +82,8 @@ export const franchiseRouterEndpoints = [
 franchiseRouter.get(
   "/",
   asyncHandler(async (_req, res) => {
-    res.json(await DB.getFranchises(res.locals.user));
+    const dao = res.locals.dao;
+    res.json(await dao.getFranchises(res.locals.user));
   }),
 );
 
@@ -95,7 +95,8 @@ franchiseRouter.get(
     let result: Franchise[] = [];
     const userId = Number(req.params.userId);
     if (res.locals.user.id === userId || res.locals.user.isRole(Role.ADMIN)) {
-      result = await DB.getUserFranchises(userId);
+      const dao = res.locals.dao;
+      result = await dao.getUserFranchises(userId);
     }
 
     res.json(result);
@@ -112,7 +113,8 @@ franchiseRouter.post(
     }
 
     const franchise = req.body;
-    res.send(await DB.createFranchise(franchise));
+    const dao = res.locals.dao;
+    res.send(await dao.createFranchise(franchise));
   }),
 );
 
@@ -125,7 +127,8 @@ franchiseRouter.delete(
     }
 
     const franchiseId = Number(req.params.franchiseId);
-    await DB.deleteFranchise(franchiseId);
+    const dao = res.locals.dao;
+    await dao.deleteFranchise(franchiseId);
     res.json({ message: "franchise deleted" });
   }),
 );
@@ -136,7 +139,8 @@ franchiseRouter.post(
   authenticateToken,
   asyncHandler(async (req, res) => {
     const franchiseId = Number(req.params.franchiseId);
-    const franchise = await DB.getFranchise({ id: franchiseId } as Franchise);
+    const dao = res.locals.dao;
+    const franchise = await dao.getFranchise({ id: franchiseId } as Franchise);
     if (
       !franchise ||
       (!res.locals.user.isRole(Role.ADMIN) &&
@@ -145,7 +149,7 @@ franchiseRouter.post(
       throw new StatusCodeError("unable to create a store", 403);
     }
 
-    res.send(await DB.createStore(franchise.id, req.body));
+    res.send(await dao.createStore(franchise.id, req.body));
   }),
 );
 
@@ -155,7 +159,8 @@ franchiseRouter.delete(
   authenticateToken,
   asyncHandler(async (req, res) => {
     const franchiseId = Number(req.params.franchiseId);
-    const franchise = await DB.getFranchise({ id: franchiseId } as Franchise);
+    const dao = res.locals.dao;
+    const franchise = await dao.getFranchise({ id: franchiseId } as Franchise);
     if (
       !franchise ||
       (!res.locals.user.isRole(Role.ADMIN) &&
@@ -165,7 +170,7 @@ franchiseRouter.delete(
     }
 
     const storeId = Number(req.params.storeId);
-    await DB.deleteStore(franchiseId, storeId);
+    await dao.deleteStore(franchiseId, storeId);
     res.json({ message: "store deleted" });
   }),
 );

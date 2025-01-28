@@ -26,12 +26,19 @@ export type Order = {
   storeId: number;
 };
 
+export type UserOrders = {
+  dinerId: number;
+  orders: Order[];
+  page: number;
+}
+
 export type Item = {
   menuId: number;
   title: string;
   description: string;
   price: number;
   image: string;
+  id: number;
 };
 
 export type Franchise = {

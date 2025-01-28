@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import version from "./version.json";
-import config from "./config.js";
+import config from "./config";
 import {
   authRouter,
   authRouterEndpoints,
@@ -9,11 +9,12 @@ import {
   orderRouter,
   orderRouterEndpoints,
   setAuthUser,
-} from "./routes/index.js";
-import { StatusCodeError } from "./endpointHelper.js";
+} from "./routes/index";
+import { StatusCodeError, setDbDAO } from "./endpointHelper";
 
 export const app = express();
 app.use(express.json());
+app.use(setDbDAO);
 app.use(setAuthUser);
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
