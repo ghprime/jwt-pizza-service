@@ -486,7 +486,7 @@ class DBDao {
   }
 
   async checkDatabaseExists(connection: Connection) {
-    const [rows] = await this.query<[][]>(
+    const rows = await this.query<[]>(
       connection,
       "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?",
       [config.db.connection.database],

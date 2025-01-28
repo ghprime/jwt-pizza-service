@@ -82,7 +82,8 @@ export const setAuthUser = async (
           !!res.locals.user.roles.find((r) => r.role === role);
       }
     } catch {
-      // @ts-expect-error If it fails then the user won't be defined, meaning its not authenticated
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       res.locals.user = undefined;
     }
   }

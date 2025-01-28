@@ -1,11 +1,11 @@
-import express from "express";
+import { Router } from "express";
 import config from "../config";
 import { DB } from "../database";
 import { authenticateToken } from "./authRouter";
 import { asyncHandler, StatusCodeError } from "../endpointHelper";
 import { Role } from "../model";
 
-export const orderRouter = express.Router();
+export const orderRouter = Router();
 
 export const orderRouterEndpoints = [
   {

@@ -1,10 +1,10 @@
-import express from "express";
+import { Router } from "express";
 import { DB } from "../database";
 import { authenticateToken } from "./authRouter";
 import { StatusCodeError, asyncHandler } from "../endpointHelper";
 import { Franchise, Role } from "../model";
 
-export const franchiseRouter = express.Router();
+export const franchiseRouter = Router();
 
 export const franchiseRouterEndpoints = [
   {
