@@ -7,16 +7,16 @@ import {
 import { compare, hash } from "bcrypt";
 import { Franchise, Item, Order, Role, Store, UserData, UserOrders } from "../model";
 import { StatusCodeError } from "../endpointHelper";
-import { tableCreateStatements } from "./dbModel";
+import { dbTables, tableCreateStatements } from "./dbModel";
 import config from "../config";
 import { DatabaseDAO } from "./DatabaseDAO";
 
 export class MySqlDAO implements DatabaseDAO {
-  private initialized: Promise<void>;
+  private initialized: Promise<any>;
 
   private static _instance: MySqlDAO;
 
-  static async getInstance(): Promise<DatabaseDAO> {
+  static async getInstance(): Promise<MySqlDAO> {
     if (this._instance) return this._instance;
 
     const temp = new MySqlDAO();
@@ -30,13 +30,44 @@ export class MySqlDAO implements DatabaseDAO {
     this.initialized = this.initializeDatabase();
   }
 
+  async clear(): Promise<void> {
+    this.initialized = this.clearTables(dbTables);
+    await this.initialized;
+
+    await this.addDefaultAdmin();
+  }
+
+  private async clearTables(tables: string[]): Promise<void> {
+    const connection = await this.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      await this.query(connection, "SET FOREIGN_KEY_CHECKS = 0;");
+
+      const promises: Promise<any>[] = [];
+
+      for (const table of tables) {
+        promises.push(this.query(connection, `TRUNCATE TABLE ${table}`));
+      }
+      
+      await Promise.allSettled(promises);
+
+      await this.query(connection, "SET FOREIGN_KEY_CHECKS = 1;");
+
+      await connection.commit();
+    } finally {
+      await connection.end();
+    }
+  }
+
   async getMenu(): Promise<Item[]> {
     const connection = await this.getConnection();
     try {
       const rows = await this.query<Item[]>(connection, "SELECT * FROM menu");
       return rows;
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -50,7 +81,7 @@ export class MySqlDAO implements DatabaseDAO {
       );
       return { ...item, id: addResult.insertId };
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -93,7 +124,7 @@ export class MySqlDAO implements DatabaseDAO {
       }
       return { ...user, id: userId, password: undefined };
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -105,8 +136,9 @@ export class MySqlDAO implements DatabaseDAO {
         "SELECT * FROM user WHERE email=?",
         [providedUser.email],
       );
+
       const user = userResult[0];
-      if (!user || !(await compare(providedUser.password!, user.password!))) {
+      if (!user || !providedUser.password || !(await compare(providedUser.password!, user.password!))) {
         throw new StatusCodeError("unknown user", 404);
       }
 
@@ -121,28 +153,36 @@ export class MySqlDAO implements DatabaseDAO {
 
       return { ...user, roles: roles, password: undefined };
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
   async updateUser(updatedUser: UserData): Promise<UserData> {
     const connection = await this.getConnection();
     try {
-      const params: string[] = [];
+      const fields: string[] = [];
+      const params: (string | number)[] = [];
+
       if (updatedUser.password) {
         const hashedPassword = await hash(updatedUser.password, 10);
-        params.push(`password='${hashedPassword}'`);
+        fields.push("password");
+        params.push(hashedPassword);
       }
+
       if (updatedUser.email) {
-        params.push(`email='${updatedUser.email}'`);
+        fields.push("email");
+        params.push(updatedUser.email);
       }
+
       if (params.length > 0) {
-        const query = `UPDATE user SET ${params.join(", ")} WHERE id=${updatedUser.id}`;
-        await this.query(connection, query);
+        params.push(updatedUser.id);
+        const query = `UPDATE user SET ${fields.map(field => `${field} = ?`).join(", ")} WHERE id=?`;
+        await this.query(connection, query, params);
       }
+
       return this.getUser(updatedUser);
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -156,7 +196,7 @@ export class MySqlDAO implements DatabaseDAO {
         [token, userId],
       );
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -171,7 +211,7 @@ export class MySqlDAO implements DatabaseDAO {
       );
       return authResult.length > 0;
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -181,7 +221,7 @@ export class MySqlDAO implements DatabaseDAO {
     try {
       await this.query(connection, "DELETE FROM auth WHERE token=?", [token]);
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -204,7 +244,7 @@ export class MySqlDAO implements DatabaseDAO {
       }
       return { dinerId: user.id, orders, page };
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -227,7 +267,7 @@ export class MySqlDAO implements DatabaseDAO {
       }
       return { ...order, id: orderId };
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -267,7 +307,7 @@ export class MySqlDAO implements DatabaseDAO {
 
       return franchise;
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -291,7 +331,7 @@ export class MySqlDAO implements DatabaseDAO {
         throw new StatusCodeError("unable to delete franchise", 500);
       }
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -315,7 +355,7 @@ export class MySqlDAO implements DatabaseDAO {
       }
       return franchises;
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -341,7 +381,7 @@ export class MySqlDAO implements DatabaseDAO {
       }
       return franchises;
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -362,7 +402,7 @@ export class MySqlDAO implements DatabaseDAO {
 
       return franchise;
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -376,7 +416,7 @@ export class MySqlDAO implements DatabaseDAO {
       );
       return { id: insertResult.insertId, franchiseId, name: store.name };
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -389,7 +429,7 @@ export class MySqlDAO implements DatabaseDAO {
         [franchiseId, storeId],
       );
     } finally {
-      connection.end();
+      await connection.end();
     }
   }
 
@@ -410,8 +450,6 @@ export class MySqlDAO implements DatabaseDAO {
     sql: string,
     params?: any[],
   ): Promise<T> {
-    console.log(`${sql};${params}`);
-
     const [results] = await connection.execute(sql, params);
     return results as T;
   }
@@ -453,7 +491,7 @@ export class MySqlDAO implements DatabaseDAO {
     return connection;
   }
 
-  private async initializeDatabase(): Promise<void> {
+  private async initializeDatabase(): Promise<boolean> {
     try {
       const connection = await this._getConnection(false);
       try {
@@ -476,16 +514,10 @@ export class MySqlDAO implements DatabaseDAO {
         }
 
         if (!dbExists) {
-          const defaultAdmin = {
-            name: "常用名字",
-            email: "a@jwt.com",
-            password: "admin",
-            roles: [{ role: Role.ADMIN }],
-          } as UserData;
-          this.addUser(defaultAdmin);
+          await this.addDefaultAdmin();
         }
       } finally {
-        connection.end();
+        await connection.end();
       }
     } catch (err) {
       console.error(
@@ -495,7 +527,9 @@ export class MySqlDAO implements DatabaseDAO {
           connection: config.db.connection,
         }),
       );
+      return false;
     }
+    return true;
   }
 
   private async checkDatabaseExists(connection: Connection) {
@@ -505,5 +539,15 @@ export class MySqlDAO implements DatabaseDAO {
       [config.db.connection.database],
     );
     return rows.length > 0;
+  }
+
+  private async addDefaultAdmin(): Promise<void> {
+    const defaultAdmin = {
+      name: "常用名字",
+      email: "a@jwt.com",
+      password: "admin",
+      roles: [{ role: Role.ADMIN }],
+    } as UserData;
+    await this.addUser(defaultAdmin);
   }
 }

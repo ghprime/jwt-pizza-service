@@ -25,11 +25,8 @@ app.use((req, res, next) => {
 });
 
 const apiRouter = express.Router();
+
 app.use("/api", apiRouter);
-apiRouter.use((req, _res, next) => {
-  console.log(`[${req.method.toUpperCase()}] ${req.path}`);
-  next();
-});
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/order", orderRouter);
 apiRouter.use("/franchise", franchiseRouter);

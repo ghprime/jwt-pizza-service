@@ -156,6 +156,7 @@ authRouter.put(
     const { email, password } = req.body;
     const id = Number(req.params.userId);
     const user = res.locals.user;
+
     if (user.id !== id && !user.isRole(Role.ADMIN)) {
       return res.status(403).json({ message: "unauthorized" });
     }

@@ -18,4 +18,5 @@ export interface DatabaseDAO {
   getFranchise(franchise: Franchise): Promise<Franchise>;
   createStore(franchiseId: number, store: Store): Promise<Store>;
   deleteStore(franchiseId: number, storeId: number): Promise<void>;
+  clear(): Promise<void>;
 }

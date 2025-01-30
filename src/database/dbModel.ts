@@ -61,3 +61,14 @@ export const tableCreateStatements = [
     INDEX (menuId)
   )`,
 ];
+
+export const dbTables: string[] = [
+  "auth",
+  "user",
+  "menu",
+  "franchise",
+  "store",
+  "userRole",
+  "dinerOrder",
+  "orderItem",
+];
