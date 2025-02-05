@@ -42,7 +42,7 @@ jobs:
 
       - name: Write config file
         run: |
-          echo "export default {
+          echo 'export default {
             jwtSecret: "${{ secrets.JWT_SECRET }}",
             db: {
               connection: {
@@ -58,7 +58,7 @@ jobs:
               url: "https://pizza-factory.cs329.click",
               apiKey: "${{ secrets.FACTORY_API_KEY }}",
             },
-          } as const;" > src/config.ts
+          } as const;' > src/config.ts
       
       - name: Tests
         run: npm test
