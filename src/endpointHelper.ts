@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { MySqlDAO } from "./database";
+import { ContextFactory } from "./context";
 
 export class StatusCodeError extends Error {
   statusCode: number;
@@ -17,7 +17,7 @@ export const asyncHandler =
     };
 
 export const setDbDAO = asyncHandler(async (_req, res, next) => {
-  const dao = await MySqlDAO.getInstance();
+  const dao = await ContextFactory.context().dao();
   res.locals.dao = dao;
   next();
 });

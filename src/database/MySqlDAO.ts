@@ -5,7 +5,7 @@ import {
   ResultSetHeader,
 } from "mysql2/promise";
 import { compare, hash } from "bcrypt";
-import { Franchise, Item, Order, Role, Store, UserData, UserOrders } from "../model";
+import { Order, Franchise, MenuItem, OrderItem, Role, Store, UserData, DinerOrder } from "../model";
 import { StatusCodeError } from "../endpointHelper";
 import { dbTables, tableCreateStatements } from "./dbModel";
 import config from "../config";
@@ -17,6 +17,7 @@ export class MySqlDAO implements DatabaseDAO {
   private static _instance: MySqlDAO;
 
   static async getInstance(): Promise<MySqlDAO> {
+
     if (this._instance) return this._instance;
 
     const temp = new MySqlDAO();
@@ -61,17 +62,17 @@ export class MySqlDAO implements DatabaseDAO {
     }
   }
 
-  async getMenu(): Promise<Item[]> {
+  async getMenu(): Promise<MenuItem[]> {
     const connection = await this.getConnection();
     try {
-      const rows = await this.query<Item[]>(connection, "SELECT * FROM menu");
+      const rows = await this.query<MenuItem[]>(connection, "SELECT * FROM menu");
       return rows;
     } finally {
       await connection.end();
     }
   }
 
-  async addMenuItem(item: Item): Promise<Item> {
+  async addMenuItem(item: MenuItem): Promise<MenuItem> {
     const connection = await this.getConnection();
     try {
       const addResult = await this.query<ResultSetHeader>(
@@ -225,17 +226,17 @@ export class MySqlDAO implements DatabaseDAO {
     }
   }
 
-  async getOrders(user: UserData, page = 1): Promise<UserOrders> {
+  async getOrders(user: UserData, page = 1): Promise<Order> {
     const connection = await this.getConnection();
     try {
       const offset = this.getOffset(config.db.listPerPage, page);
-      const orders = await this.query<Order[]>(
+      const orders = await this.query<DinerOrder[]>(
         connection,
         `SELECT id, franchiseId, storeId, date FROM dinerOrder WHERE dinerId=? LIMIT ${offset},${config.db.listPerPage}`,
         [user.id],
       );
       for (const order of orders) {
-        const items = await this.query<Item[]>(
+        const items = await this.query<OrderItem[]>(
           connection,
           "SELECT id, menuId, description, price FROM orderItem WHERE orderId=?",
           [order.id],
@@ -248,7 +249,7 @@ export class MySqlDAO implements DatabaseDAO {
     }
   }
 
-  async addDinerOrder(user: UserData, order: Order): Promise<Order> {
+  async addDinerOrder(user: UserData, order: DinerOrder): Promise<DinerOrder> {
     const connection = await this.getConnection();
     try {
       const orderResult = await this.query<ResultSetHeader>(
@@ -258,11 +259,11 @@ export class MySqlDAO implements DatabaseDAO {
       );
       const orderId = orderResult.insertId;
       for (const item of order.items) {
-        const menuId = await this.getID(connection, "id", item.menuId, "menu");
+        const [dbItem] = await this.query<MenuItem[]>(connection, "SELECT * FROM menu WHERE id=?", [item.menuId]);
         await this.query(
           connection,
           "INSERT INTO orderItem (orderId, menuId, description, price) VALUES (?, ?, ?, ?)",
-          [orderId, menuId, item.description, item.price],
+          [orderId, dbItem.id, dbItem.description, dbItem.price],
         );
       }
       return { ...order, id: orderId };
@@ -272,6 +273,15 @@ export class MySqlDAO implements DatabaseDAO {
   }
 
   async createFranchise(franchise: Franchise): Promise<Franchise> {
+    franchise = { 
+      ...franchise,
+      admins: franchise.admins?.map(
+        admin => ({ ...admin, roles: admin.roles?.map(
+          role => ({ ...role })) }
+        ),
+      ),
+    };
+
     const connection = await this.getConnection();
     try {
       for (const admin of franchise.admins) {
@@ -335,16 +345,17 @@ export class MySqlDAO implements DatabaseDAO {
     }
   }
 
-  async getFranchises(authUser: UserData): Promise<Franchise[]> {
+  async getFranchises(authUser?: UserData): Promise<Franchise[]> {
     const connection = await this.getConnection();
     try {
       const franchises = await this.query<Franchise[]>(
         connection,
         "SELECT id, name FROM franchise",
       );
-      for (const franchise of franchises) {
+
+      for (let franchise of franchises) {
         if (authUser?.isRole(Role.ADMIN)) {
-          await this.getFranchise(franchise);
+          franchise = await this.getFranchise(franchise);
         } else {
           franchise.stores = await this.query<Store[]>(
             connection,
@@ -353,6 +364,7 @@ export class MySqlDAO implements DatabaseDAO {
           );
         }
       }
+
       return franchises;
     } finally {
       await connection.end();
@@ -376,10 +388,13 @@ export class MySqlDAO implements DatabaseDAO {
         connection,
         `SELECT id, name FROM franchise WHERE id in (${franchiseIds.join(",")})`,
       );
+
+      const toReturn: Franchise[] = [];
+
       for (const franchise of franchises) {
-        await this.getFranchise(franchise);
+        toReturn.push(await this.getFranchise(franchise));
       }
-      return franchises;
+      return toReturn;
     } finally {
       await connection.end();
     }
@@ -460,7 +475,7 @@ export class MySqlDAO implements DatabaseDAO {
     value: any,
     table: string,
   ): Promise<number> {
-    const [rows] = await this.query<ResultSetHeader & { id: number }[][]>(
+    const rows = await this.query<ResultSetHeader & { id: number }[]>(
       connection,
       `SELECT id FROM ${table} WHERE ${key}=?`,
       [value],

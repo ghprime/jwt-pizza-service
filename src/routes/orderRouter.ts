@@ -110,7 +110,7 @@ orderRouter.get(
   authenticateToken,
   asyncHandler(async (req, res) => {
     const dao = res.locals.dao;
-    res.json(await dao.getOrders(res.locals.user, +req.query.page!));
+    res.json(await dao.getOrders(res.locals.user, req.query.page ? +req.query.page : undefined));
   }),
 );
 

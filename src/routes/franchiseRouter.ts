@@ -121,6 +121,7 @@ franchiseRouter.post(
 // deleteFranchise
 franchiseRouter.delete(
   "/:franchiseId",
+  authenticateToken,
   asyncHandler(async (req, res) => {
     if (!res.locals.user.isRole(Role.ADMIN)) {
       throw new StatusCodeError("unable to delete a franchise", 403);

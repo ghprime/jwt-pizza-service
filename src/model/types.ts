@@ -11,6 +11,7 @@ export type RoleData = {
   role: Role;
   object?: any;
   objectId?: number;
+  userId?: number;
 };
 
 export enum Role {
@@ -19,27 +20,36 @@ export enum Role {
   ADMIN = "admin",
 }
 
-export type Order = {
-  items: Item[];
+export type DinerOrder = {
   id: number;
   franchiseId: number;
   storeId: number;
-};
-
-export type UserOrders = {
+  date: Date;
   dinerId: number;
-  orders: Order[];
+  items: OrderItem[];
+}
+
+export type Order = {
+  dinerId: number;
+  orders: DinerOrder[]
   page: number;
 }
 
-export type Item = {
+export type OrderItem = {
+  id: number;
+  orderId: number;
   menuId: number;
-  title: string;
   description: string;
   price: number;
-  image: string;
+}
+
+export type MenuItem = {
   id: number;
-};
+  title: string;
+  image: string;
+  price: number;
+  description: string;
+}
 
 export type Franchise = {
   admins: UserData[];
@@ -52,4 +62,5 @@ export type Store = {
   name: string;
   id: number;
   franchiseId: number;
+  totalRevenue?: number;
 };
