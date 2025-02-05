@@ -1,23 +1,13 @@
 import request from "supertest";
-import { app, MySqlDAO, Role, UserData } from "../../src";
+import { app, Role, UserData } from "../../src";
 import TestAgent from "supertest/lib/agent";
-import * as crypto from "node:crypto";
+import { ContextFactory } from "../../src/context";
+import { createContext, getRandomString, newUser } from "../testUtils";
 
 describe("authRouter", () => {
   let server: TestAgent;
-  let req: Record<string, string>;
 
   const apiPath = "/api/auth";
-
-  const getRandomString = () => {
-    return crypto.randomBytes(20).toString("hex");
-  };
-
-  const newUser = () => ({
-    password: getRandomString(),
-    name: getRandomString(),
-    email: `${getRandomString()}@email.com`,
-  });
 
   const register = async (req: Record<string, string>) => await server
     .post(apiPath)
@@ -38,23 +28,20 @@ describe("authRouter", () => {
     .send(req)
     .set("Content-Type", "application/json")
     .set("authorization", `auth ${token}`);
-  
-  beforeAll(() => {
-    server = request(app);
-  });
-
-  afterEach(async () => {
-    const dao = await MySqlDAO.getInstance();
-
-    await dao.clear();
-  });
 
   describe("register", () => {
-    beforeEach(() => {
-      req = newUser();
+    const setup = () => ({
+      req: newUser(),
+    });
+
+    beforeEach(async () => {
+      ContextFactory.setContext(createContext());
+      server = request(app);
     });
   
     it("registers successfully", async () => {
+      const { req } = setup();
+
       const res = await register(req);
   
       expect(res.body.message).toBe(undefined);
@@ -70,7 +57,9 @@ describe("authRouter", () => {
       "email",
       "name",
     ])("errors when missing %s", async (toDelete: string) => {
-      delete req[toDelete];
+      const { req } = setup();
+
+      delete (req as any)[toDelete];
   
       const res = await register(req);
   
@@ -79,7 +68,9 @@ describe("authRouter", () => {
     });
     
     it("allows extra fields", async () => {
-      req.random = "hello!";
+      const { req } = setup();
+
+      (req as any).random = "hello!";
   
       const res = await register(req);
       
@@ -92,7 +83,7 @@ describe("authRouter", () => {
     });
     
     it("allows two duplicate users", async () => {
-      req.random = "hello!";
+      const { req } = setup();
   
       const res = await register(req);
       const res2 = await register(req);
@@ -118,13 +109,18 @@ describe("authRouter", () => {
   });
 
   describe("login", () => {
-    let user: Record<string, string>;
+    const setup = () => ({
+      user: newUser(),
+    });
 
-    beforeEach(() => {
-      user = newUser();
+    beforeEach(async () => {
+      ContextFactory.setContext(createContext());
+      server = request(app);
     });
 
     it("successfully logs in", async () => {
+      const { user } = setup();
+
       await register(user);
 
       const res = await logIn(user);
@@ -133,6 +129,8 @@ describe("authRouter", () => {
     });
 
     it("can't log in a non-existant user", async () => {
+      const { user } = setup();
+
       const res = await logIn(user);
 
       expect(res.body.token).toBe(undefined);
@@ -141,13 +139,18 @@ describe("authRouter", () => {
   });
 
   describe("logout", () => {
-    let user: Record<string, string>;
+    const setup = () => ({
+      user: newUser(),
+    });
 
-    beforeEach(() => {
-      user = newUser();
+    beforeEach(async () => {
+      ContextFactory.setContext(createContext());
+      server = request(app);
     });
 
     it("successfully logs out", async () => {
+      const { user } = setup();
+
       await register(user);
 
       const res1 = await logIn(user);
@@ -176,6 +179,8 @@ describe("authRouter", () => {
     });
 
     it("can't double log out", async () => {
+      const { user } = setup();
+
       await register(user);
 
       const res1 = await logIn(user);
@@ -200,7 +205,9 @@ describe("authRouter", () => {
     let userId: number;
 
     beforeEach(async () => {
-      const dao = await MySqlDAO.getInstance();
+      ContextFactory.setContext(createContext());
+      server = request(app);
+      const dao = await ContextFactory.context().dao();
       
       adminCreds = newUser();
 
@@ -210,7 +217,7 @@ describe("authRouter", () => {
 
       adminToken = res1.body.token;
       
-      adminId = res1.body.user.id;
+      adminId = res1.body.user?.id;
 
       user = newUser();
 
@@ -223,11 +230,11 @@ describe("authRouter", () => {
     it("allows admin to update other user", async () => {
       const updatedUser = newUser();
 
-      const res2 = await updateUser(updatedUser, userId, adminToken);
+      const res = await updateUser(updatedUser, userId, adminToken);
 
-      expect(res2.body.name).toBe(user.name);
-      expect(res2.body.email).toBe(updatedUser.email);
-      expect(res2.body.id).toBe(userId);
+      expect(res.body.name).toBe(user.name);
+      expect(res.body.email).toBe(updatedUser.email);
+      expect(res.body.id).toBe(userId);
     });
 
     it("allows admin to update self", async () => {
@@ -269,9 +276,9 @@ describe("authRouter", () => {
     it("can't modify user without token", async () => {
       const updatedUser = newUser();
 
-      const res2 = await updateUser(updatedUser, userId, "non-token");
+      const res = await updateUser(updatedUser, userId, "non-token");
 
-      expect(res2.body.message).toBe("unauthorized");
+      expect(res.body.message).toBe("unauthorized");
     });
   });
 });
