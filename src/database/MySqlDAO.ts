@@ -103,7 +103,7 @@ export class MySqlDAO implements DatabaseDAO {
             const franchiseId = await this.getID(
               connection,
               "name",
-              role.object,
+              role.objectId,
               "franchise",
             );
             await this.query(

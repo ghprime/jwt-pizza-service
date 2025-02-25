@@ -12,7 +12,7 @@ describe("DatabaseDao", () => {
   ];
 
   const newDiner = () => newUserData([{ role: Role.DINER }]);
-  const newFranchisee = (franchise: string) => newUserData([{ role: Role.FRANCHISEE, object: franchise }]);
+  const newFranchisee = (franchise: string) => newUserData([{ role: Role.FRANCHISEE, objectId: franchise }]);
   const newAdmin = () => newUserData([{ role: Role.ADMIN }]);
 
   const newUserData = (roles: RoleData[]) => ({

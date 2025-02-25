@@ -73,7 +73,7 @@ export class MemoryDAO implements DatabaseDAO {
     for (const role of user.roles) {
       switch (role.role) {
         case Role.FRANCHISEE: {
-          const franchise = this.franchises.find(franchise => franchise.name === role.object);
+          const franchise = this.franchises.find(franchise => franchise.name === role.objectId);
           
           if (!franchise) throw new Error("No ID found");
 

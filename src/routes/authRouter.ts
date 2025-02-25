@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { asyncHandler } from "../endpointHelper";
 import config from "../config";
-import { Role, UserData } from "../model";
+import { Role, RoleData, UserData } from "../model";
 import { DatabaseDAO } from "../database";
 
 export const authRouter = Router();
@@ -80,7 +80,7 @@ export const setAuthUser = asyncHandler(async (
         const user = jwt.verify(token, config.jwtSecret) as unknown as UserData;
         res.locals.user = user;
         user.isRole = (role: Role) =>
-          !!res.locals.user.roles.find((r) => r.role === role);
+          !!res.locals.user.roles.find((r: RoleData) => r.role === role);
       }
     } catch {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment

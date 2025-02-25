@@ -1,4 +1,4 @@
-import { DB } from "./database";
+import { ContextFactory } from "./context";
 import { Role, UserData } from "./model";
 
 if (process.argv.length < 5) {
@@ -15,4 +15,5 @@ const user = {
   password,
   roles: [{ role: Role.ADMIN }],
 } as UserData;
-DB.addUser(user).then((r) => console.log("created user: ", r));
+
+ContextFactory.context().dao().then(db => db.addUser(user).then(r => console.log("created user: ", r)));

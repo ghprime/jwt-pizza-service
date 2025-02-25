@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticateToken } from "./authRouter";
 import { StatusCodeError, asyncHandler } from "../endpointHelper";
-import { Franchise, Role } from "../model";
+import { Franchise, Role, UserData } from "../model";
 
 export const franchiseRouter = Router();
 
@@ -145,7 +145,7 @@ franchiseRouter.post(
     if (
       !franchise ||
       (!res.locals.user.isRole(Role.ADMIN) &&
-        !franchise.admins.some((admin) => admin.id === res.locals.user.id))
+        !franchise.admins.some((admin: UserData) => admin.id === res.locals.user.id))
     ) {
       throw new StatusCodeError("unable to create a store", 403);
     }
@@ -165,7 +165,7 @@ franchiseRouter.delete(
     if (
       !franchise ||
       (!res.locals.user.isRole(Role.ADMIN) &&
-        !franchise.admins.some((admin) => admin.id === res.locals.user.id))
+        !franchise.admins.some((admin: UserData) => admin.id === res.locals.user.id))
     ) {
       throw new StatusCodeError("unable to delete a store", 403);
     }

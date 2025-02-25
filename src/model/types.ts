@@ -9,8 +9,7 @@ export interface UserData {
 
 export type RoleData = {
   role: Role;
-  object?: any;
-  objectId?: number;
+  objectId?: number | string;
   userId?: number;
 };
 
