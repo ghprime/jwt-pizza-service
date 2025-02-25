@@ -4,7 +4,10 @@
     "outDir": "dist",
     "noEmit": false,
     "sourceMap": false,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "moduleResolution": "nodenext",
+    "module": "NodeNext",
+    "target": "ESNext"
   },
   "include": [
     "src/server.ts"
