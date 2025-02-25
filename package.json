@@ -5,7 +5,8 @@
   "scripts": {
     "start": "tsx src/server.ts",
     "test": "jest",
-    "lint": "eslint . --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "build": "tsc src/server.ts --esModuleInterop --resolveJsonModule --outDir dist"
   },
   "license": "MIT",
   "dependencies": {
