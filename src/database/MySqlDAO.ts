@@ -86,8 +86,7 @@ export class MySqlDAO implements DatabaseDAO {
     }
   }
 
-  async addUser(user: UserData): Promise<UserData> {
-    const connection = await this.getConnection();
+  private async _addUser(user: UserData, connection: Connection): Promise<UserData> {
     try {
       const hashedPassword = await hash(user.password!, 10);
 
@@ -129,8 +128,13 @@ export class MySqlDAO implements DatabaseDAO {
     }
   }
 
-  async getUser(providedUser: UserData): Promise<UserData> {
+  async addUser(user: UserData): Promise<UserData> {
     const connection = await this.getConnection();
+
+    return this._addUser(user, connection);
+  }
+
+  private async _getUser(providedUser: UserData, connection: Connection): Promise<UserData> {
     try {
       const userResult = await this.query<UserData[]>(
         connection,
@@ -157,6 +161,12 @@ export class MySqlDAO implements DatabaseDAO {
     } finally {
       await connection.end();
     }
+  }
+
+  async getUser(providedUser: UserData): Promise<UserData> {
+    const connection = await this.getConnection();
+    
+    return this._getUser(providedUser, connection);
   }
 
   async updateUser(updatedUser: UserData): Promise<UserData> {
@@ -569,12 +579,12 @@ export class MySqlDAO implements DatabaseDAO {
       roles: [{ role: Role.ADMIN }],
     } as UserData;
     try {
-      await this.addUser(defaultAdmin);
+      await this._addUser(defaultAdmin, await this._getConnection());
     } catch (e) {
       this.temp.error = { message: (e as any)?.message };
     }
 
-    this.temp.user = await this.getUser(defaultAdmin);
+    this.temp.user = await this._getUser(defaultAdmin, await this._getConnection());
 
     this.temp.defaultAdmin = defaultAdmin;
   }
