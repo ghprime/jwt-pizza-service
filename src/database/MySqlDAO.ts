@@ -140,7 +140,7 @@ export class MySqlDAO implements DatabaseDAO {
 
       const user = userResult[0];
       if (!user || !providedUser.password || !(await compare(providedUser.password!, user.password!))) {
-        return { user, providedUser } as unknown as UserData;
+        return { user, providedUser, temp: this.temp } as unknown as UserData;
         // throw new StatusCodeError("unknown user", 404);
       }
 
@@ -507,6 +507,8 @@ export class MySqlDAO implements DatabaseDAO {
     return connection;
   }
 
+  private temp: Record<string, any> = {};
+
   private async initializeDatabase(): Promise<boolean> {
     try {
       const connection = await this._getConnection(false);
@@ -515,6 +517,8 @@ export class MySqlDAO implements DatabaseDAO {
         console.log(
           dbExists ? "Database exists" : "Database does not exist, creating it",
         );
+
+        this.temp.exists = dbExists;
 
         await connection.query(
           `CREATE DATABASE IF NOT EXISTS ${config.db.connection.database}`,
@@ -565,5 +569,7 @@ export class MySqlDAO implements DatabaseDAO {
       roles: [{ role: Role.ADMIN }],
     } as UserData;
     await this.addUser(defaultAdmin);
+
+    this.temp.defaultAdmin = defaultAdmin;
   }
 }
