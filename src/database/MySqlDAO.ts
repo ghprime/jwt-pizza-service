@@ -520,6 +520,8 @@ export class MySqlDAO implements DatabaseDAO {
 
         this.temp.exists = dbExists;
 
+        this.temp.db = config.db;
+
         await connection.query(
           `CREATE DATABASE IF NOT EXISTS ${config.db.connection.database}`,
         );
