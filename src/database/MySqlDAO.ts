@@ -144,8 +144,7 @@ export class MySqlDAO implements DatabaseDAO {
 
       const user = userResult[0];
       if (!user || !providedUser.password || !(await compare(providedUser.password!, user.password!))) {
-        return { user, providedUser, temp: this.temp } as unknown as UserData;
-        // throw new StatusCodeError("unknown user", 404);
+        throw new StatusCodeError("unknown user", 404);
       }
 
       const roleResult = await this.query<{ objectId?: number; role: Role }[]>(
@@ -517,8 +516,6 @@ export class MySqlDAO implements DatabaseDAO {
     return connection;
   }
 
-  private temp: Record<string, any> = {};
-
   private async initializeDatabase(): Promise<boolean> {
     try {
       const connection = await this._getConnection(false);
@@ -527,8 +524,6 @@ export class MySqlDAO implements DatabaseDAO {
         console.log(
           dbExists ? "Database exists" : "Database does not exist, creating it",
         );
-
-        this.temp.exists = dbExists;
 
         await connection.query(
           `CREATE DATABASE IF NOT EXISTS ${config.db.connection.database}`,
@@ -543,9 +538,9 @@ export class MySqlDAO implements DatabaseDAO {
           await connection.query(statement);
         }
 
-        // if (!dbExists) {
-        await this.addDefaultAdmin();
-        // }
+        if (!dbExists) {
+          await this.addDefaultAdmin();
+        }
       } finally {
         await connection.end();
       }
@@ -578,14 +573,7 @@ export class MySqlDAO implements DatabaseDAO {
       password: "admin",
       roles: [{ role: Role.ADMIN }],
     } as UserData;
-    try {
-      await this._addUser(defaultAdmin, await this._getConnection());
-    } catch (e) {
-      this.temp.error = { message: (e as any)?.message };
-    }
 
-    this.temp.user = await this._getUser(defaultAdmin, await this._getConnection());
-
-    this.temp.defaultAdmin = defaultAdmin;
+    await this._addUser(defaultAdmin, await this._getConnection());
   }
 }
