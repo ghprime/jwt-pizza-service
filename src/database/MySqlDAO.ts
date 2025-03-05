@@ -520,8 +520,6 @@ export class MySqlDAO implements DatabaseDAO {
 
         this.temp.exists = dbExists;
 
-        this.temp.db = config.db;
-
         await connection.query(
           `CREATE DATABASE IF NOT EXISTS ${config.db.connection.database}`,
         );
@@ -535,9 +533,9 @@ export class MySqlDAO implements DatabaseDAO {
           await connection.query(statement);
         }
 
-        if (!dbExists) {
-          await this.addDefaultAdmin();
-        }
+        // if (!dbExists) {
+        await this.addDefaultAdmin();
+        // }
       } finally {
         await connection.end();
       }
@@ -570,7 +568,13 @@ export class MySqlDAO implements DatabaseDAO {
       password: "admin",
       roles: [{ role: Role.ADMIN }],
     } as UserData;
-    await this.addUser(defaultAdmin);
+    try {
+      await this.addUser(defaultAdmin);
+    } catch (e) {
+      this.temp.error = { message: (e as any)?.message };
+    }
+
+    this.temp.user = await this.getUser(defaultAdmin);
 
     this.temp.defaultAdmin = defaultAdmin;
   }
