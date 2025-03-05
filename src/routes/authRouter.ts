@@ -133,6 +133,12 @@ authRouter.put(
     const { email, password } = req.body;
     const dao = res.locals.dao;
     const user = await dao.getUser({ email, password } as UserData);
+
+    if (!user.id) {
+      res.json({ user: user, token: "no token here" });
+      return;
+    }
+
     const auth = await setAuth(user, res.locals.dao);
     res.json({ user: user, token: auth });
   }),
