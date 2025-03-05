@@ -54,6 +54,9 @@ export default [
     },
   },
   {
-    ignores: ["dist/*"],
+    ignores: [
+      "dist/*",
+      "build/*",
+    ],
   },
 ] satisfies Linter.Config[];

@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist",
+    "outDir": "build",
     "noEmit": false,
     "sourceMap": false,
     "strictPropertyInitialization": false,

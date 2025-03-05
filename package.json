@@ -6,7 +6,7 @@
     "start": "tsx src/server.ts",
     "test": "jest",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
-    "build": "tsc src/server.ts --esModuleInterop --resolveJsonModule --outDir dist"
+    "build": "tsc -p tsconfig.build.json"
   },
   "license": "MIT",
   "dependencies": {
@@ -35,7 +35,6 @@
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "tsc": "^2.0.4",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
