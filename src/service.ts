@@ -61,7 +61,7 @@ app.use(
   (err: StatusCodeError, _req: Request, res: Response, next: NextFunction) => {
     res
       .status(err.statusCode ?? 500)
-      .json({ message: err.message, stack: err.stack });
+      .json({ message: err.message });
     next();
   },
 );

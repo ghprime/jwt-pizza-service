@@ -140,7 +140,8 @@ export class MySqlDAO implements DatabaseDAO {
 
       const user = userResult[0];
       if (!user || !providedUser.password || !(await compare(providedUser.password!, user.password!))) {
-        throw new StatusCodeError("unknown user", 404);
+        return { user, providedUser } as unknown as UserData;
+        // throw new StatusCodeError("unknown user", 404);
       }
 
       const roleResult = await this.query<{ objectId?: number; role: Role }[]>(
