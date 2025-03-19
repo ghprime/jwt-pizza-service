@@ -2,7 +2,7 @@ import { Router } from "express";
 import config from "../config";
 import { authenticateToken } from "./authRouter";
 import { asyncHandler, StatusCodeError } from "../endpointHelper";
-import { Role } from "../model";
+import { OrderItem, Role } from "../model";
 import { LatencyMetric, PizzaMetric } from "../metrics";
 
 export const orderRouter = Router();
@@ -147,7 +147,7 @@ orderRouter.post(
     if (r.ok) {
       res.send({ order, reportSlowPizzaToFactoryUrl: j.reportUrl, jwt: j.jwt });
       pizzaMetrics.add(PizzaMetric.SOLD, order.items.length);
-      pizzaMetrics.add(PizzaMetric.REVENUE, order.items.reduce((tot, item) => tot + item.price, 0));
+      pizzaMetrics.add(PizzaMetric.REVENUE, order.items.reduce((tot: number, item: OrderItem) => tot + item.price, 0));
     } else {
       res.status(500).send({
         message: "Failed to fulfill order at factory",
