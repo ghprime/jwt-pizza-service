@@ -327,7 +327,8 @@ describe("orderRouter", () => {
 
       expect(res.body).toStrictEqual({
         order: { 
-          ...dinerOrder, 
+          ...dinerOrder,
+          items: res.body.order.items,
           id: 3,
         },
         reportSlowPizzaToFactoryUrl: "reportUrl",

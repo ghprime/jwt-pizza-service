@@ -3,6 +3,7 @@ import config from "../config";
 import { authenticateToken } from "./authRouter";
 import { asyncHandler, StatusCodeError } from "../endpointHelper";
 import { Role } from "../model";
+import { LatencyMetric, PizzaMetric } from "../metrics";
 
 export const orderRouter = Router();
 
@@ -119,6 +120,11 @@ orderRouter.post(
   "/",
   authenticateToken,
   asyncHandler(async (req, res) => {
+    const pizzaMetrics = res.locals.metrics.pizza;
+    const latencyMetrics = res.locals.metrics.latency;
+
+    const start = Date.now();
+
     const orderReq = req.body;
     const dao = res.locals.dao;
     const order = await dao.addDinerOrder(res.locals.user, orderReq);
@@ -140,11 +146,16 @@ orderRouter.post(
     const j = await r.json();
     if (r.ok) {
       res.send({ order, reportSlowPizzaToFactoryUrl: j.reportUrl, jwt: j.jwt });
+      pizzaMetrics.add(PizzaMetric.SOLD, order.items.length);
+      pizzaMetrics.add(PizzaMetric.REVENUE, order.items.reduce((tot, item) => tot + item.price, 0));
     } else {
       res.status(500).send({
         message: "Failed to fulfill order at factory",
         reportPizzaCreationErrorToPizzaFactoryUrl: j.reportUrl,
       });
+      pizzaMetrics.add(PizzaMetric.CREATION_FAILURE, order.items.length);
     }
+
+    latencyMetrics.add(LatencyMetric.PIZZA_CREATION, Date.now() - start);
   }),
 );

@@ -268,15 +268,30 @@ export class MySqlDAO implements DatabaseDAO {
         [user.id, order.franchiseId, order.storeId],
       );
       const orderId = orderResult.insertId;
+
+      const fullItems: OrderItem[] = [];
+
       for (const item of order.items) {
         const [dbItem] = await this.query<MenuItem[]>(connection, "SELECT * FROM menu WHERE id=?", [item.menuId]);
-        await this.query(
+
+        if (!dbItem) throw new StatusCodeError(`Menu item with id ${item.menuId} does not exist`, 400);
+
+        const result = await this.query<ResultSetHeader>(
           connection,
           "INSERT INTO orderItem (orderId, menuId, description, price) VALUES (?, ?, ?, ?)",
           [orderId, dbItem.id, dbItem.description, dbItem.price],
         );
+
+        fullItems.push({
+          orderId,
+          menuId: dbItem.id,
+          description: dbItem.description,
+          price: dbItem.price,
+          id: result.insertId,
+        });
       }
-      return { ...order, id: orderId };
+
+      return { ...order, items: fullItems, id: orderId };
     } finally {
       await connection.end();
     }

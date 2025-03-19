@@ -1,9 +1,10 @@
 import { Router, Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { asyncHandler } from "../endpointHelper";
+import { asyncHandler, StatusCodeError } from "../endpointHelper";
 import config from "../config";
 import { Role, RoleData, UserData } from "../model";
 import { DatabaseDAO } from "../database";
+import { AuthMetric } from "../metrics";
 
 export const authRouter = Router();
 
@@ -97,10 +98,17 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction,
 ) => {
+  const authMetrics = res.locals.metrics.auth;
+  authMetrics.inc(AuthMetric.AUTH_ATTEMPTS);
+
   if (!res.locals.user) {
+    authMetrics.inc(AuthMetric.AUTH_ATTEMPTS_FAIL);
     res.status(401).send({ message: "unauthorized" });
     return;
   }
+
+  authMetrics.inc(AuthMetric.AUTH_ATTEMPTS_SUCCESS);
+
   next();
 };
 
@@ -123,6 +131,7 @@ authRouter.post(
     } as UserData);
     const auth = await setAuth(user, res.locals.dao);
     res.json({ user: user, token: auth });
+    res.locals.metrics.auth.inc(AuthMetric.ACTIVE_USERS);
   }),
 );
 
@@ -130,17 +139,30 @@ authRouter.post(
 authRouter.put(
   "/",
   asyncHandler(async (req, res) => {
+    const authMetrics = res.locals.metrics.auth;
+
+    authMetrics.inc(AuthMetric.AUTH_ATTEMPTS);
+
     const { email, password } = req.body;
     const dao = res.locals.dao;
-    const user = await dao.getUser({ email, password } as UserData);
 
-    if (!user.id) {
-      res.json({ user: user, token: "no token here" });
-      return;
+    let user: UserData;
+
+    try {
+      user = await dao.getUser({ email, password } as UserData);
+    } catch (err) {
+      if (!(err instanceof StatusCodeError)) throw err;
+      
+      authMetrics.inc(AuthMetric.AUTH_ATTEMPTS_FAIL);
+      
+      throw err;
     }
 
     const auth = await setAuth(user, res.locals.dao);
     res.json({ user: user, token: auth });
+
+    authMetrics.inc(AuthMetric.AUTH_ATTEMPTS_SUCCESS);
+    authMetrics.inc(AuthMetric.ACTIVE_USERS);
   }),
 );
 
@@ -151,6 +173,7 @@ authRouter.delete(
   asyncHandler(async (req, res) => {
     await clearAuth(req, res.locals.dao);
     res.json({ message: "logout successful" });
+    res.locals.metrics.auth.dec(AuthMetric.ACTIVE_USERS);
   }),
 );
 

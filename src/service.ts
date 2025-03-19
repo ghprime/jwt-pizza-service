@@ -10,11 +10,12 @@ import {
   orderRouterEndpoints,
   setAuthUser,
 } from "./routes/index";
-import { StatusCodeError, setDbDAO } from "./endpointHelper";
+import { StatusCodeError, setLocals, trackHttpMetrics } from "./endpointHelper";
 
 export const app = express();
 app.use(express.json());
-app.use(setDbDAO);
+app.use(setLocals);
+app.use(trackHttpMetrics);
 app.use(setAuthUser);
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");

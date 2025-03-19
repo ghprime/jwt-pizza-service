@@ -173,21 +173,26 @@ export class MemoryDAO implements DatabaseDAO {
     const orderId = ++this.dinerOrderId;
     this.dinerOrders.push({ dinerId: user.id, franchiseId: order.franchiseId, date: new Date(), id: orderId, storeId: order.storeId } as DinerOrder);
 
+    const fullItems: OrderItem[] = [];
+
     for (const item of order.items) {
       const menuItem = this.menuItems.find(menuItem => menuItem.id === item.menuId);
 
       if (!menuItem) throw new Error("unknown menu item");
 
-      this.orderItems.push({ 
+      const fullItem: OrderItem = { 
         orderId, 
         menuId: menuItem.id, 
         description: menuItem.description, 
         price: menuItem.price, 
         id: ++this.orderItemId, 
-      });
+      };
+
+      this.orderItems.push(fullItem);
+      fullItems.push(fullItem);
     }
 
-    return { ...order, id: orderId };
+    return { ...order, items: fullItems, id: orderId };
   }
 
   private async getUserNoAuth(userToFind: UserData): Promise<UserData> {

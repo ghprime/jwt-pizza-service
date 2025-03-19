@@ -1,12 +1,14 @@
 import "express";
 import type { UserData } from "../src/model";
 import { DatabaseDAO } from "../src";
+import { Context } from "../src/context";
 
 declare global {
   namespace Express {
     interface Locals {
       user: UserData;
       dao: DatabaseDAO;
+      metrics: Awaited<ReturnType<Context["metrics"]>>;
     }
   }
 }

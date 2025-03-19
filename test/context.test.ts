@@ -1,5 +1,5 @@
 import { DatabaseDAO, MySqlDAO } from "../src";
-import { ContextFactory } from "../src/context";
+import { Context, ContextFactory } from "../src/context";
 
 
 describe("context", () => {
@@ -20,6 +20,9 @@ describe("context", () => {
       async dao() { 
         return undefined as unknown as DatabaseDAO; 
       },
+      async metrics() {
+        return undefined as unknown as ReturnType<Context["metrics"]>;
+      },
     };
 
     ContextFactory.setContext(context);
@@ -31,6 +34,9 @@ describe("context", () => {
     const context = {
       async dao() { 
         return undefined as unknown as DatabaseDAO; 
+      },
+      async metrics() {
+        return undefined as unknown as ReturnType<Context["metrics"]>;
       },
     };
     
