@@ -61,26 +61,17 @@ jobs:
             grafana: {
               source: "jwt-pizza-service",
               metrics: {
-                apiKey: "${{ secrets.METRICS_URL }}",
-                url: "${{ secrets.METRICS_API_KEY }}",
+                apiKey: "${{ secrets.METRICS_API_KEY }}",
+                url: "${{ secrets.METRICS_URL }}",
                 userId: "${{ secrets.METRICS_USER_ID }}",
               },
               logging: {
-                apiKey: "${{ secrets.LOGGING_URL }}",
-                url: "${{ secrets.LOGGING_API_KEY }}",
+                apiKey: "${{ secrets.LOGGING_API_KEY }}",
+                url: "${{ secrets.LOGGING_URL }}",
                 userId: "${{ secrets.LOGGING_USER_ID }}",
               },
             },
           } as const;' > src/config.ts
-
-      - name: Check for issues
-        run: |
-          echo "${{ secrets.METRICS_URL }}" | sed 's/./& /g'
-          echo "${{ secrets.METRICS_API_KEY }}" | sed 's/./& /g'
-          echo "${{ secrets.METRICS_USER_ID }}" | sed 's/./& /g'
-          echo "${{ secrets.LOGGING_URL }}" | sed 's/./& /g'
-          echo "${{ secrets.LOGGING_API_KEY }}" | sed 's/./& /g'
-          echo "${{ secrets.LOGGING_USER_ID }}" | sed 's/./& /g'
       
       - name: Tests
         run: npm test
