@@ -99,10 +99,10 @@ export const logHttpRequests = (req: Request, res: Response, next: NextFunction)
       path: req.path,
     } as const;
 
-    if (Math.floor(status / 100) === 2) {
-      logger.info(log);
-    } else {
+    if (Math.floor(status / 100) === 5) {
       logger.error(log);
+    } else {
+      logger.info(log);
     }
   });
 

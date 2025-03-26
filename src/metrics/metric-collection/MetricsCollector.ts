@@ -1,6 +1,6 @@
 import { loadavg, cpus, totalmem, freemem } from "node:os";
 import { ContextFactory } from "../../context";
-import { AuthMetric, HttpMetric, LatencyMetric, PizzaMetric, SystemMetric } from "../metric-types";
+import { AuthMetric, HttpMetric, LatencyMetric, LoggerMetric, PizzaMetric, SystemMetric } from "../metric-types";
 
 export type CollectedMetrics = {
   active_users: number;
@@ -13,6 +13,8 @@ export type CollectedMetrics = {
   delete_requests: number;
   other_requests: number;
   service_latency: number;
+  log_success: number,
+  log_failed: number,
   pizza_latency: number;
   pizzas_sold: number;
   pizzas_failed: number;
@@ -53,6 +55,8 @@ export class MetricsCollector {
       other_requests: metrics.http.get(HttpMetric.OTHER_REQUESTS),
       service_latency: metrics.latency.get(LatencyMetric.SERVICE_ENDPOINT),
       pizza_latency: metrics.latency.get(LatencyMetric.PIZZA_CREATION),
+      log_failed: metrics.logs.get(LoggerMetric.LOG_FAILED),
+      log_success: metrics.logs.get(LoggerMetric.LOG_SUCCEEDED),
       pizzas_sold: metrics.pizza.get(PizzaMetric.SOLD),
       pizzas_failed: metrics.pizza.get(PizzaMetric.CREATION_FAILURE),
       revenue: metrics.pizza.get(PizzaMetric.REVENUE),

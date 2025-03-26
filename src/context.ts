@@ -7,6 +7,8 @@ import {
   HttpMetrics, 
   LatencyMetric,
   LatencyMetrics, 
+  LoggerMetric, 
+  LoggerMetrics, 
   Metrics, 
   PizzaMetric, 
   PizzaMetrics, 
@@ -20,6 +22,7 @@ export interface Context {
     auth: Metrics<AuthMetric>;
     http: Metrics<HttpMetric>;
     latency: Metrics<LatencyMetric>;
+    logs: Metrics<LoggerMetric>;
     pizza: Metrics<PizzaMetric>;
     system: Metrics<SystemMetric>;
   }>;
@@ -44,6 +47,7 @@ export class ContextFactory {
         auth: AuthMetrics.getInstance(),
         http: HttpMetrics.getInstance(),
         latency: LatencyMetrics.getInstance(),
+        logs: LoggerMetrics.getInstance(),
         pizza: PizzaMetrics.getInstance(),
         system: SystemMetrics.getInstance(),
       }),
