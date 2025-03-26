@@ -2,6 +2,7 @@ import { MemoryDAO } from "../src";
 import { Context } from "../src/context";
 import * as crypto from "node:crypto";
 import { AuthMetrics, HttpMetrics, LatencyMetrics, PizzaMetrics, SystemMetrics } from "../src/metrics";
+import { Logger } from "../src/logger";
 
 export const createContext = (): Context => {
   const dao = MemoryDAO.createInstance();
@@ -18,6 +19,9 @@ export const createContext = (): Context => {
         pizza: PizzaMetrics.createInstance(),
         system: SystemMetrics.createInstance(),
       };
+    },
+    async logging() {
+      return new Logger();
     },
   };
 };

@@ -1,5 +1,6 @@
 import { DatabaseDAO, MySqlDAO } from "../src";
 import { Context, ContextFactory } from "../src/context";
+import { Logger } from "../src/logger";
 
 
 describe("context", () => {
@@ -23,6 +24,9 @@ describe("context", () => {
       async metrics() {
         return undefined as unknown as ReturnType<Context["metrics"]>;
       },
+      async logging() {
+        return undefined as unknown as Logger;
+      },
     };
 
     ContextFactory.setContext(context);
@@ -37,6 +41,9 @@ describe("context", () => {
       },
       async metrics() {
         return undefined as unknown as ReturnType<Context["metrics"]>;
+      },
+      async logging() {
+        return undefined as unknown as Logger;
       },
     };
     

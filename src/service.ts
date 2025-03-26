@@ -10,13 +10,21 @@ import {
   orderRouterEndpoints,
   setAuthUser,
 } from "./routes/index";
-import { StatusCodeError, setLocals, trackHttpMetrics } from "./endpointHelper";
+import { 
+  StatusCodeError,
+  logHttpRequests,
+  setLocals,
+  trackHttpMetrics,
+} from "./endpointHelper";
 
 export const app = express();
+
 app.use(express.json());
 app.use(setLocals);
 app.use(trackHttpMetrics);
+app.use(logHttpRequests);
 app.use(setAuthUser);
+
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");

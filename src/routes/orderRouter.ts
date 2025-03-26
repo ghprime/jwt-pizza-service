@@ -122,6 +122,7 @@ orderRouter.post(
   asyncHandler(async (req, res) => {
     const pizzaMetrics = res.locals.metrics.pizza;
     const latencyMetrics = res.locals.metrics.latency;
+    const logger = res.locals.logger;
 
     const start = Date.now();
 
@@ -148,12 +149,22 @@ orderRouter.post(
       res.send({ order, reportSlowPizzaToFactoryUrl: j.reportUrl, jwt: j.jwt });
       pizzaMetrics.add(PizzaMetric.SOLD, order.items.length);
       pizzaMetrics.add(PizzaMetric.REVENUE, order.items.reduce((tot: number, item: OrderItem) => tot + item.price, 0));
+      logger.info({
+        type: "factory",
+        message: "Pizza factory created pizza(s)",
+        response: j,
+      });
     } else {
       res.status(500).send({
         message: "Failed to fulfill order at factory",
         reportPizzaCreationErrorToPizzaFactoryUrl: j.reportUrl,
       });
       pizzaMetrics.add(PizzaMetric.CREATION_FAILURE, order.items.length);
+      logger.error({
+        type: "factory",
+        error: "Pizza factory error",
+        response: j,
+      });
     }
 
     latencyMetrics.add(LatencyMetric.PIZZA_CREATION, Date.now() - start);

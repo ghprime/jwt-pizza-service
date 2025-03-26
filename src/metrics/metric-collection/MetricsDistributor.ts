@@ -95,8 +95,6 @@ export class MetricsDistributor {
   };
 
   static async distribute(metrics: CollectedMetrics) {
-    console.log(metrics);
-
     const granfanaMetrics: any[] = [];
     
     for (const type of Object.keys(this.types)) {
@@ -123,17 +121,15 @@ export class MetricsDistributor {
     });
 
     try {
-      const response = await fetch(`${config.metrics.url}`, {
+      const response = await fetch(`${config.grafana.metrics.url}`, {
         method: "POST",
-        body: body,
-        headers: { Authorization: `Bearer ${config.metrics.apiKey}`, "Content-Type": "application/json" },
+        body,
+        headers: { Authorization: `Bearer ${config.grafana.metrics.userId}:${config.grafana.metrics.apiKey}`, "Content-Type": "application/json" },
       });
 
       if (!response.ok) {
         const text = await response.text();
-        console.log(`Failed to push metrics data to Granfana: ${text}\n${body}`);
-      } else {
-        console.log("Pushed metrics");
+        console.log(`Failed to push metrics data to Granfana: ${text}}`);
       }
     } catch (err) {
       console.error("Error pushing metrics:", err);
@@ -157,7 +153,7 @@ export class MetricsDistributor {
           timeUnixNano: Date.now() * 1000000,
           attributes: [{
             key: "source",
-            value: { "stringValue": config.metrics.source },
+            value: { "stringValue": config.grafana.source },
           }],
         }],
         ...options,

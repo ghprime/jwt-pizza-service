@@ -1,4 +1,5 @@
 import { DatabaseDAO, MySqlDAO } from "./database";
+import { Logger } from "./logger";
 import { 
   AuthMetric, 
   AuthMetrics,
@@ -22,6 +23,7 @@ export interface Context {
     pizza: Metrics<PizzaMetric>;
     system: Metrics<SystemMetric>;
   }>;
+  logging(): Promise<Logger>;
 }
 
 export class ContextFactory {
@@ -45,6 +47,7 @@ export class ContextFactory {
         pizza: PizzaMetrics.getInstance(),
         system: SystemMetrics.getInstance(),
       }),
+      logging: () => Promise.resolve(Logger.getInstance()),
     };
 
     return this._context;

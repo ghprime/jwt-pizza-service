@@ -20,8 +20,10 @@ export const asyncHandler =
 export const setLocals = asyncHandler(async (_req, res, next) => {
   const dao = await ContextFactory.context().dao();
   const metrics = await ContextFactory.context().metrics();
+  const logger = await ContextFactory.context().logging();
   res.locals.dao = dao;
   res.locals.metrics = metrics;
+  res.locals.logger = logger;
   next();
 });
 
@@ -57,6 +59,52 @@ export const trackHttpMetrics = (req: Request, res: Response, next: NextFunction
   }
 
   res.locals.metrics.http.inc(method);
+
+  next();
+};
+
+export const logHttpRequests = (req: Request, res: Response, next: NextFunction) => {
+  const logger = res.locals.logger;
+  
+  const originalJson = res.json;
+  const originalSend = res.send;
+  const originalStatus = res.status;
+
+  let status: number = 200;
+  let response: any = null;
+
+  res.json = (body: any) => {
+    response = body;
+    return originalJson.call(res, body);
+  };
+
+  res.send = (body: any) => {
+    response = body;
+    return originalSend.call(res, body);
+  };
+
+  res.status = (code: number) => {
+    status = code;
+    return originalStatus.call(res, code);
+  };
+
+  res.on("finish", () => {
+    const log = {
+      request: req.body,
+      response,
+      status,
+      type: "http",
+      auth: !!req.headers.authorization,
+      method: req.method,
+      path: req.path,
+    } as const;
+
+    if (Math.floor(status / 100) === 2) {
+      logger.info(log);
+    } else {
+      logger.error(log);
+    }
+  });
 
   next();
 };

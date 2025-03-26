@@ -10,6 +10,7 @@ import { StatusCodeError } from "../endpointHelper";
 import { dbTables, tableCreateStatements } from "./dbModel";
 import config from "../config";
 import { DatabaseDAO } from "./DatabaseDAO";
+import { ContextFactory } from "../context";
 
 export class MySqlDAO implements DatabaseDAO {
   private initialized: Promise<any>;
@@ -490,6 +491,10 @@ export class MySqlDAO implements DatabaseDAO {
     sql: string,
     params?: any[],
   ): Promise<T> {
+    (await ContextFactory.context().logging()).info({
+      type: "sql",
+      sql,
+    });
     const [results] = await connection.execute(sql, params);
     return results as T;
   }
