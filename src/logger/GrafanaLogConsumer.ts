@@ -1,4 +1,5 @@
 import config from "../config";
+import { LoggerMetric, LoggerMetrics } from "../metrics";
 import { ILogConsumer, Level } from "./ILogConsumer";
 
 // [timestamp, log]
@@ -95,8 +96,12 @@ export class GrafanaLogConsumer implements ILogConsumer {
 
       if (!response.ok) {
         console.error("Failed to send logs to Loki:", response.statusText);
+        LoggerMetrics.getInstance().inc(LoggerMetric.LOG_FAILED);
+      } else {
+        LoggerMetrics.getInstance().inc(LoggerMetric.LOG_SUCCEEDED);
       }
     } catch (error) {
+      LoggerMetrics.getInstance().inc(LoggerMetric.LOG_FAILED);
       console.error("Error sending logs to Loki:", error);
     }
   }
