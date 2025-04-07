@@ -27,17 +27,20 @@ export const setLocals = asyncHandler(async (_req, res, next) => {
   next();
 });
 
-export const trackHttpMetrics = (req: Request, res: Response, next: NextFunction) => {
+export const trackHttpMetrics = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const start = Date.now();
 
   res.on("finish", () => {
-    res
-      .locals
-      .metrics
-      .latency
-      .add(LatencyMetric.SERVICE_ENDPOINT, Date.now() - start);
+    res.locals.metrics.latency.add(
+      LatencyMetric.SERVICE_ENDPOINT,
+      Date.now() - start,
+    );
   });
-  
+
   let method: HttpMetric;
 
   switch (req.method) {
@@ -63,9 +66,13 @@ export const trackHttpMetrics = (req: Request, res: Response, next: NextFunction
   next();
 };
 
-export const logHttpRequests = (req: Request, res: Response, next: NextFunction) => {
+export const logHttpRequests = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const logger = res.locals.logger;
-  
+
   const originalJson = res.json;
   const originalSend = res.send;
   const originalStatus = res.status;
@@ -100,6 +107,7 @@ export const logHttpRequests = (req: Request, res: Response, next: NextFunction)
     } as const;
 
     if (Math.floor(status / 100) === 5) {
+      res.locals.metrics.http.inc(HttpMetric.SERVER_ERROR);
       logger.error(log);
     } else {
       logger.info(log);

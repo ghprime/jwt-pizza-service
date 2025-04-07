@@ -12,6 +12,7 @@ export type CollectedMetrics = {
   post_requests: number;
   delete_requests: number;
   other_requests: number;
+  server_error: number;
   service_latency: number;
   log_success: number,
   log_failed: number,
@@ -53,6 +54,7 @@ export class MetricsCollector {
       post_requests: metrics.http.get(HttpMetric.POST_REQUESTS),
       delete_requests: metrics.http.get(HttpMetric.DELETE_REQUESTS),
       other_requests: metrics.http.get(HttpMetric.OTHER_REQUESTS),
+      server_error: metrics.http.get(HttpMetric.SERVER_ERROR),
       service_latency: metrics.latency.get(LatencyMetric.SERVICE_ENDPOINT),
       pizza_latency: metrics.latency.get(LatencyMetric.PIZZA_CREATION),
       log_failed: metrics.logs.get(LoggerMetric.LOG_FAILED),
