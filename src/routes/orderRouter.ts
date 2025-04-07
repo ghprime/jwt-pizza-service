@@ -4,8 +4,11 @@ import { authenticateToken } from "./authRouter";
 import { asyncHandler, StatusCodeError } from "../endpointHelper";
 import { OrderItem, Role } from "../model";
 import { LatencyMetric, PizzaMetric } from "../metrics";
+import { checkChaos, setChaos } from "../chaos";
 
 export const orderRouter = Router();
+
+orderRouter.use(checkChaos);
 
 export const orderRouterEndpoints = [
   {
@@ -114,6 +117,8 @@ orderRouter.get(
     res.json(await dao.getOrders(res.locals.user, req.query.page ? +req.query.page : undefined));
   }),
 );
+
+orderRouter.put("/chaos/:state", setChaos("/api/order", { method: "POST" }));
 
 // createOrder
 orderRouter.post(

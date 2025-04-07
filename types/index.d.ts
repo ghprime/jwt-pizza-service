@@ -11,6 +11,7 @@ declare global {
       dao: DatabaseDAO;
       metrics: Awaited<ReturnType<Context["metrics"]>>;
       logger: Logger;
+      chaos: boolean;
     }
   }
 }

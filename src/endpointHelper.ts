@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { ContextFactory } from "./context";
 import { HttpMetric, LatencyMetric } from "./metrics";
+import { ChaosManager } from "./chaos";
 
 export class StatusCodeError extends Error {
   statusCode: number;
@@ -17,13 +18,16 @@ export const asyncHandler =
       return Promise.resolve(fn(req, res, next)).catch(next);
     };
 
-export const setLocals = asyncHandler(async (_req, res, next) => {
+export const setLocals = asyncHandler(async (req, res, next) => {
   const dao = await ContextFactory.context().dao();
   const metrics = await ContextFactory.context().metrics();
   const logger = await ContextFactory.context().logging();
   res.locals.dao = dao;
   res.locals.metrics = metrics;
   res.locals.logger = logger;
+
+  res.locals.chaos = ChaosManager.getInstance().hasChaos(req.path, req.method);
+
   next();
 });
 
